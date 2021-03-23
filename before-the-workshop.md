@@ -221,3 +221,14 @@ If you got `hello world` - congratulations, everything is set up.
 
 If you did not get `hello world`,  please get in touch with me directly (see <https://gojko.net/about/>) before the workshop, so I can help you troubleshoot and set up everything.
 
+### Testing the Docker installation
+
+If you installed Docker for local testing, try it out using
+
+```
+sam local start-api
+```
+
+Then browse to https://localhost:3000/hello. This should also print "hello world". Note that the first time you browse to this URL, it will take a long time, since Docker is building the initial image.
+
+
