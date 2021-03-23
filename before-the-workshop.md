@@ -190,7 +190,7 @@ If the command prints an error, go back to configuring the command line tool cre
 This test will check that you have everything installed correctly.
 
 ```
-git clone gojko/serverless-workshop-march-2021
+git clone git@github.com:gojko/serverless-workshop-march-2021.git
 cd serverless-workshop-march-2021/setup-test
 sam deploy -g
 ```
