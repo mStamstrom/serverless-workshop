@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+   # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+   HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello-world
+      Handler: lambda.handler
+      Runtime: nodejs14.x
+      Events:
+        ReadPollEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+Outputs:
+  APIURL:
+    Description: "API Endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

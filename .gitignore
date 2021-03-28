@@ -1,0 +1,7 @@
+.env
+.aws-sam
+.python-env
+.DS_Store
+package-lock.json
+samconfig.toml
+node_modules

@@ -1,0 +1,8 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "aws-embedded-metrics": "^2.0.4"
+  }
+}
