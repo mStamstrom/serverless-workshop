@@ -195,7 +195,7 @@ npm init --yes
 npm install aws-embedded-metrics
 
 
-# Add your own metrics easily
+## Add your own metrics easily
 
 const { metricScope, Unit } = require('aws-embedded-metrics');
 
@@ -206,15 +206,15 @@ exports.handler = metricScope(metrics => async (event, context) => {
   metrics.putMetric('Success', 1, Unit.Count);
 });
 
-# Bundle before deployment
+## Bundle before deployment
 
 sam build
 
-# SAM template globals
+## SAM template globals
 
 https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy-globals.html
 
-# Activate XRay in CloudFormation
+## Activate XRay in CloudFormation
 
 Globals:
   Api:
@@ -222,7 +222,7 @@ Globals:
   Function:
     Tracing: "Active"
 
-# Activate XRay in code
+## Activate XRay in code
 
 const AWSXRay = require('aws-xray-sdk-core'),
 	aws = AWSXRay.captureAWS(require('aws-sdk'));
@@ -230,15 +230,15 @@ const AWSXRay = require('aws-xray-sdk-core'),
 AWSXRay.setContextMissingStrategy(() => {});
 
 
-# NodeJS - cache connections
+## NodeJS - cache connections
 
 AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
-# CloudFormation conditions
+## CloudFormation conditions
 
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/conditions-section-structure.html
 
-# Use conditions to switch XRay On/Off
+## Use conditions to switch XRay On/Off
 
 Parameters:
   XRay:
