@@ -1,5 +1,9 @@
 # Notes and useful commands
 
+## guided deployment (initial)
+
+sam deploy -g --stack-name poller-backend
+
 ## SAM resource definition for functions
 
 https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
@@ -195,7 +199,7 @@ npm init --yes
 npm install aws-embedded-metrics
 
 
-## Add your own metrics easily
+# Add your own metrics easily
 
 const { metricScope, Unit } = require('aws-embedded-metrics');
 
@@ -206,7 +210,7 @@ exports.handler = metricScope(metrics => async (event, context) => {
   metrics.putMetric('Success', 1, Unit.Count);
 });
 
-## Bundle before deployment
+# Bundle before deployment
 
 sam build
 
