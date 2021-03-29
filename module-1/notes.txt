@@ -55,9 +55,17 @@ sam validate
 
 npm i
 
-## run Node tests
+## run Node tests from tests/ex1.test.js
 
-npm t
+npm t ex1.test
+
+## Run only tests from a specific file
+
+npm t part-of-filename
+
+## Run only tests with a specific description
+
+npm t -t "description"
 
 ## Turn JS object into string
 
@@ -106,14 +114,6 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dyna
 !Sub "something-${PollingTable}-something else"
 !Sub "something-${PollingTable.Arn}-something else"
 ```
-
-## Run only tests from a specific file
-
-npm t -- part-of-filename
-
-## Run only tests with a specific description
-
-npm t -- -t "description"
 
 ## Dynamo document client
 
