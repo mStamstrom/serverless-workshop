@@ -1,4 +1,3 @@
-/*
 const getJSON = require('./get-json'),
 	putJSON = require('./put-json');
 describe('exercise 7', () => {
@@ -18,4 +17,3 @@ describe('exercise 7', () => {
 		expect(itemFromApi.counts).toEqual({});
 	});
 });
-*/

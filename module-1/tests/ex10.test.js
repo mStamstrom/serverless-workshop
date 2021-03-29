@@ -1,4 +1,3 @@
-/*
 const dbName = process.env.POLLINGTABLE,
 	apiUrl = process.env.APIURL,
 	putJSON = require('./put-json'),
@@ -74,4 +73,3 @@ describe('exercise 4', () => {
 		expect(itemFromApi.counts).toEqual({'42': 3});
 	});
 });
-*/

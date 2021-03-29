@@ -1,4 +1,3 @@
-/*
 const putJSON = require('./put-json');
 describe('exercise 3', () => {
 	beforeEach(() => {
@@ -27,4 +26,3 @@ describe('exercise 3', () => {
 		expect(parsedBody1.pollId).not.toEqual(parsedBody2.pollId);
 	});
 });
-*/

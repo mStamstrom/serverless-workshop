@@ -1,4 +1,3 @@
-/*
 const putJSON = require('./put-json');
 describe('exercise 2', () => {
 	beforeEach(() => {
@@ -32,4 +31,3 @@ describe('exercise 2', () => {
 		});
 	});
 });
-*/

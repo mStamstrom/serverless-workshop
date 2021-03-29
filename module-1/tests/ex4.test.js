@@ -1,4 +1,3 @@
-/*
 const dbName = process.env.POLLINGTABLE,
 	aws = require('aws-sdk');
 describe('exercise 4', () => {
@@ -32,4 +31,3 @@ describe('exercise 4', () => {
 		expect(itemFromDb.counts).toEqual({'Yes': 20, 'No': 50});
 	});
 });
-*/

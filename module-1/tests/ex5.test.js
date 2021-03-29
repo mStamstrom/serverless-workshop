@@ -1,4 +1,3 @@
-/*
 const putJSON = require('./put-json'),
 	dbName = process.env.POLLINGTABLE,
 	aws = require('aws-sdk');
@@ -28,4 +27,3 @@ describe('exercise 5', () => {
 		expect(itemFromDb.counts).toEqual({});
 	});
 });
-*/

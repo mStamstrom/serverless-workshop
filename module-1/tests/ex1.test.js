@@ -1,4 +1,3 @@
-/*
 const putJSON = require('./put-json');
 describe('exercise 1', () => {
 	beforeEach(() => {
@@ -16,4 +15,3 @@ describe('exercise 1', () => {
 		expect(response.headers['content-type']).toEqual('application/json');
 	});
 });
-*/
