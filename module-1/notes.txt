@@ -152,7 +152,7 @@ https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazondy
 
 ## retrieve an environment variable in JS
 
-const table = process.env.POLLINGTABLE;
+const dbName = process.env.POLLINGTABLE;
 
 ## run/debug locally with variables
 
@@ -179,7 +179,15 @@ Parameters:
     Default: ''
     Description: 'Set to something to provide detailed logging'
 
-  
+## Reference a parameter in the template
+
+  PollManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          DEBUG: !Ref VerboseLog
+
 ## set parameter when deploying
 
 sam deploy --parameter-overrides VerboseLog=Yes
@@ -196,6 +204,26 @@ fields action, pollId, @timestamp
 https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html
 
 
+## generic paths in API Gateway
+
+  PollManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        ReadPollEvent:
+          Type: Api
+          Properties:
+            Path: /polls/{pollId}
+            Method: get
+
+## access path parameters in Lambda
+
+event.pathParameters.pollId
+
+## access current request http method
+
+event.httpMethod
+
 ## Add external library
 
 cd poll-management
@@ -211,7 +239,8 @@ exports.handler = metricScope(metrics => async (event, context) => {
   metrics.setNamespace(metricsGroup);
   //...
   metrics.putMetric('Polls Created', 1, Unit.Count);
-  metrics.putMetric('Success', 1, Unit.Count);
+  ///
+  metrics.putMetric('Polls Viewed', 1, Unit.Count);
 });
 
 # Bundle before deployment
@@ -224,6 +253,8 @@ https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/s
 
 ## Activate XRay in CloudFormation
 
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
 Globals:
   Api:
     TracingEnabled: true
@@ -234,6 +265,7 @@ Globals:
 
 const AWSXRay = require('aws-xray-sdk-core'),
 	aws = AWSXRay.captureAWS(require('aws-sdk'));
+  // instead of aws = require('aws-sdk')
 
 AWSXRay.setContextMissingStrategy(() => {});
 
