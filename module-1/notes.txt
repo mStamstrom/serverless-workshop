@@ -55,7 +55,7 @@ sam validate
 
 npm i
 
-## run Node tests from tests/ex1.test.js
+## run Node tests from ex1.test.js (inside the tests dir)
 
 npm t ex1.test
 
@@ -86,6 +86,10 @@ https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html
 ## Prevent Node.js lambdas from stalling
 
 context.callbackWaitsForEmptyEventLoop = false;
+
+## Unique request ID
+
+context.awsRequestId
 
 ## Define a Dynamo table using cloudformation
 
