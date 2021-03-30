@@ -9,7 +9,7 @@ Resources:
      Handler: lambda.handler
      Runtime: nodejs14.x
      Events:
-        ReadPollEvent:
+       RootGet:
          Type: Api
          Properties:
            Path: /
