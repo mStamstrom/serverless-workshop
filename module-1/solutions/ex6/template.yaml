@@ -1,10 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Parameters:
-  VerboseLog:
-    Type: String
-    Default: ''
-    Description: 'Set to something to provide detailed logging'
 Resources:
   PollingTable:
     Type: AWS::DynamoDB::Table
@@ -18,6 +13,7 @@ Resources:
       BillingMode: "PAY_PER_REQUEST"
       SSESpecification:
         SSEEnabled: true
+
   PollManagementFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -36,13 +32,18 @@ Resources:
       Environment:
         Variables:
           POLLINGTABLE: !Ref PollingTable
-          DEBUG: !Ref VerboseLog
       Events:
         CreatePollEvent:
           Type: Api
           Properties:
             Path: /polls
             Method: put
+        ReadPollEvent:
+          Type: Api
+          Properties:
+            Path: /polls/{pollId}
+            Method: get
+
 Outputs:
   APIURL:
     Description: "API Endpoint URL"

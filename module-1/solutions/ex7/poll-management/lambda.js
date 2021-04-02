@@ -1,6 +1,5 @@
 'use strict';
 const dbName = process.env.POLLINGTABLE,
-	verboseLogging = process.env.DEBUG,
 	aws = require('aws-sdk'),
 	apiError = err => ({
 		statusCode: 400,
@@ -18,13 +17,9 @@ const dbName = process.env.POLLINGTABLE,
 	});
 
 exports.handler = async (event, context) => {
-	if (verboseLogging) {
-		console.log(event);
-	}
-	const logger = verboseLogging ? console: false,
+	const // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html
 		dynamoDbClient = new aws.DynamoDB.DocumentClient({
-			params: {TableName: dbName},
-			logger
+			params: {TableName: dbName}
 		});
 	if (event.httpMethod === 'PUT' && event.body) {
 		const body = JSON.parse(event.body);
@@ -46,6 +41,5 @@ exports.handler = async (event, context) => {
 			return apiSuccess(response.Item);
 		}
 	}
-	console.error(event);
 	return apiError('invalid request');
 };

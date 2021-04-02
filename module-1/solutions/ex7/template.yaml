@@ -1,12 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Parameters:
-  VerboseLog:
-    Type: String
-    Default: ''
-    Description: 'Set to something to provide detailed logging'
-
 Resources:
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
   PollingTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -32,13 +27,13 @@ Resources:
         - Statement:
           - Effect: Allow
             Action:
+              # https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazondynamodb.html
               - dynamodb:GetItem
               - dynamodb:PutItem
             Resource: !GetAtt PollingTable.Arn
       Environment:
         Variables:
           POLLINGTABLE: !Ref PollingTable
-          DEBUG: !Ref VerboseLog
       Events:
         CreatePollEvent:
           Type: Api
@@ -51,9 +46,35 @@ Resources:
             Path: /polls/{pollId}
             Method: get
 
+  VoteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: vote
+      Handler: lambda.handler
+      Runtime: nodejs14.x
+      MemorySize: 512
+      Timeout: 30
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              # https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazondynamodb.html
+              - dynamodb:UpdateItem
+              - dynamodb:PutItem
+            Resource: !GetAtt PollingTable.Arn
+      Environment:
+        Variables:
+          POLLINGTABLE: !Ref PollingTable
+      Events:
+        VoteEvent:
+          Type: Api
+          Properties:
+            Path: /votes/{pollId}
+            Method: put
 Outputs:
   APIURL:
     Description: "API Endpoint URL"
+    # Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
   POLLINGTABLE:
     Description: "DynamoDB table for polling"

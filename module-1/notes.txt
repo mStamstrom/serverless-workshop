@@ -112,12 +112,10 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dyna
 
 ## CloudFormation functions
 
-```
 !Ref PollingTable
 !GetAtt PollingTable.Arn
 !Sub "something-${PollingTable}-something else"
 !Sub "something-${PollingTable.Arn}-something else"
-```
 
 ## Dynamo document client
 
@@ -159,6 +157,38 @@ const dbName = process.env.POLLINGTABLE;
 sam local start-api --env-vars tests/env.json
 
 
+## generic paths in API Gateway
+
+  PollManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        ReadPollEvent:
+          Type: Api
+          Properties:
+            Path: /polls/{pollId}
+            Method: get
+
+## access path parameters in Lambda
+
+event.pathParameters.pollId
+
+## access current request http method
+
+event.httpMethod
+
+
+## query cloudwatch insights
+
+fields action, pollId, @timestamp
+| filter action = 'create'
+| sort @timestamp desc
+| limit 20
+
+## Cloudwatch insights query language docs
+
+https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html
+
 ## Add logging to dynamo
 
 verboseLogging = process.env.DEBUG;
@@ -192,37 +222,7 @@ Parameters:
 
 sam deploy --parameter-overrides VerboseLog=Yes
 
-## query cloudwatch insights
 
-fields action, pollId, @timestamp
-| filter action = 'create'
-| sort @timestamp desc
-| limit 20
-
-## Cloudwatch insights query language docs
-
-https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html
-
-
-## generic paths in API Gateway
-
-  PollManagementFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Events:
-        ReadPollEvent:
-          Type: Api
-          Properties:
-            Path: /polls/{pollId}
-            Method: get
-
-## access path parameters in Lambda
-
-event.pathParameters.pollId
-
-## access current request http method
-
-event.httpMethod
 
 ## Add external library
 

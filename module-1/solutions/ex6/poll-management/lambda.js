@@ -1,6 +1,5 @@
 'use strict';
 const dbName = process.env.POLLINGTABLE,
-	verboseLogging = process.env.DEBUG,
 	aws = require('aws-sdk'),
 	apiError = err => ({
 		statusCode: 400,
@@ -17,17 +16,10 @@ const dbName = process.env.POLLINGTABLE,
 		}
 	});
 
-
 exports.handler = async (event, context) => {
-	if (verboseLogging) {
-		console.log(event);
-		console.log(context);
-	}
-	const logger = verboseLogging ? console: false,
-		dynamoDbClient = new aws.DynamoDB.DocumentClient({
-			params: {TableName: dbName},
-			logger
-		});
+	const dynamoDbClient = new aws.DynamoDB.DocumentClient({
+		params: {TableName: dbName},
+	});
 	if (event.httpMethod === 'PUT' && event.body) {
 		const body = JSON.parse(event.body);
 		if (!body.question || !Array.isArray(body.answers) || body.answers.length < 1) {
@@ -36,7 +28,6 @@ exports.handler = async (event, context) => {
 			const pollId = context.awsRequestId,
 				{question, answers} = body;
 			await dynamoDbClient.put({Item: {pollId, question, answers, counts: {} }}).promise();
-			console.log({action: 'create', pollId});
 			return apiSuccess({pollId});
 		}
 	}
@@ -44,7 +35,6 @@ exports.handler = async (event, context) => {
 		const {pollId} = event.pathParameters,
 			response = await dynamoDbClient.get({Key: {pollId}}).promise();
 		if (response.Item) {
-			console.log({action: 'view', pollId});
 			return apiSuccess(response.Item);
 		}
 	}
