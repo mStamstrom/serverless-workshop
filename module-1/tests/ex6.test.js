@@ -1,6 +1,6 @@
 const getJSON = require('./get-json'),
 	putJSON = require('./put-json');
-describe('exercise 7', () => {
+describe('exercise 6', () => {
 	beforeEach(() => {
 		jest.setTimeout(30000);
 	});

@@ -3,7 +3,7 @@ const dbName = process.env.POLLINGTABLE,
 	putJSON = require('./put-json'),
 	getJSON = require('./get-json'),
 	aws = require('aws-sdk');
-describe('exercise 4', () => {
+describe('exercise 7', () => {
 	let dynamoDbClient, readFromPrimaryPartition;
 	beforeEach(() => {
 		jest.setTimeout(30000);

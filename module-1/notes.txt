@@ -83,10 +83,6 @@ JSON.parse(text)
 
 https://docs.aws.amazon.com/lambda/latest/dg/nodejs-context.html
 
-## Prevent Node.js lambdas from stalling
-
-context.callbackWaitsForEmptyEventLoop = false;
-
 ## Unique request ID
 
 context.awsRequestId
@@ -121,7 +117,7 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dyna
 
 https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html
 
-## Wire Policies into a function
+## Allow a function to write/read Dynamo data
 
   PollManagementFunction:
     Type: AWS::Serverless::Function
@@ -138,7 +134,7 @@ https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.
 
 https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazondynamodb.html
 
-## Link objects in the same template
+## Tell the function about the database name 
 
   PollManagementFunction:
     Type: AWS::Serverless::Function
@@ -155,7 +151,6 @@ const dbName = process.env.POLLINGTABLE;
 ## run/debug locally with variables
 
 sam local start-api --env-vars tests/env.json
-
 
 ## generic paths in API Gateway
 
@@ -177,6 +172,31 @@ event.pathParameters.pollId
 
 event.httpMethod
 
+## save an item to dynamodb
+
+await dynamoDbClient.put({Item: itemToSave}).promise();
+
+## read an item from dynamodb
+
+const response = await dynamoDbClient.get({Key: key, ConsistentRead: readFromPrimaryPartition}).promise();
+return response?.Item;
+
+## increment a counter in an item
+
+incrementCount = async (pollId, votedOption) => {
+  await dynamoDbClient.update({
+    Key: {pollId},
+    UpdateExpression: 'SET #counts.#answer = if_not_exists(#counts.#answer, :zero) + :inc',
+    ExpressionAttributeNames: {
+      '#counts': 'counts',
+      '#answer': votedOption,
+    },
+    ExpressionAttributeValues: {
+      ':inc': 1,
+      ':zero': 0
+    }
+  }).promise();
+};
 
 ## query cloudwatch insights
 
@@ -188,108 +208,4 @@ fields action, pollId, @timestamp
 ## Cloudwatch insights query language docs
 
 https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html
-
-## Add logging to dynamo
-
-verboseLogging = process.env.DEBUG;
-logger = verboseLogging ? console: false;
-dynamoDbClient = new aws.DynamoDB.DocumentClient({
-  params: {TableName: dbName},
-  logger
-});
-
-
-## define stack parameters
-
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
-Parameters:
-  VerboseLog:
-    Type: String
-    Default: ''
-    Description: 'Set to something to provide detailed logging'
-
-## Reference a parameter in the template
-
-  PollManagementFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Environment:
-        Variables:
-          DEBUG: !Ref VerboseLog
-
-## set parameter when deploying
-
-sam deploy --parameter-overrides VerboseLog=Yes
-
-
-
-## Add external library
-
-cd poll-management
-npm init --yes
-npm install aws-embedded-metrics
-
-
-# Add your own metrics easily
-
-const { metricScope, Unit } = require('aws-embedded-metrics');
-
-exports.handler = metricScope(metrics => async (event, context) => {
-  metrics.setNamespace(metricsGroup);
-  //...
-  metrics.putMetric('Polls Created', 1, Unit.Count);
-  ///
-  metrics.putMetric('Polls Viewed', 1, Unit.Count);
-});
-
-# Bundle before deployment
-
-sam build
-
-## SAM template globals
-
-https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy-globals.html
-
-## Activate XRay in CloudFormation
-
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
-Globals:
-  Api:
-    TracingEnabled: true
-  Function:
-    Tracing: "Active"
-
-## Activate XRay in code
-
-const AWSXRay = require('aws-xray-sdk-core'),
-	aws = AWSXRay.captureAWS(require('aws-sdk'));
-  // instead of aws = require('aws-sdk')
-
-AWSXRay.setContextMissingStrategy(() => {});
-
-
-## NodeJS - cache connections
-
-AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
-
-## CloudFormation conditions
-
-https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/conditions-section-structure.html
-
-## Use conditions to switch XRay On/Off
-
-Parameters:
-  XRay:
-    Type: String
-    Default: ''
-    Description: 'Use X-Ray to profile requests'
-Conditions:
-  UseXray: !Equals ['yes', !Ref XRay]
-Globals:
-  Api:
-    TracingEnabled: !If [UseXray, true, false ]
-  Function:
-    Tracing: !If [UseXray, "Active", "PassThrough"]
 
