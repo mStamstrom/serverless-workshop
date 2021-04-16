@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+	<meta name="theme-color" content="#7952b3">
+	<meta name="APIURL" content="${APIURL}">
+  </head>
+  <body>
+   <div class="px-4 py-5 col-lg-6 mx-auto" data-role="container">
+	  <h1 class="display-5 fw-bold" data-role="question">Loading...</h1>
+	  <div class="alert alert-danger invisible" role="alert"></div>
+	  <form>
+		  <div class="form-group" data-role="answer-template">
+			  <input class="form-check-input" type="radio" name="answer" value="" >
+			  <label class="form-check-label"></label>
+		  </div>
+		  <div data-role="buttons" class="invisible">
+			  <a data-role="results-link" class="btn btn-light">View Results</a>
+			  <button type="submit" class="btn btn-primary">Submit</button>
+		  </div>
+	  </form>
+  </div>
+	<script src="lib/jquery/dist/jquery.min.js"></script>
+    <script src="lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="scripts/vote.js"></script>
+  </body>
+</html>
+
+

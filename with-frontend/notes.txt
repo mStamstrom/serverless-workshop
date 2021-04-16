@@ -1,0 +1,114 @@
+# allow cross-origin access in API - note you may want to restrict AllowOrigin in real apps
+
+Globals:
+  Api:
+    Cors:
+      AllowHeaders: "'Content-Type'"
+      AllowOrigin: "'*'"
+      MaxAge: "'3600'"
+
+# deploy SAM with nested templates
+
+sam deploy -g --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name poller-frontend
+
+- make sure to provide the API URL when asked
+
+
+
+
+# update a field with Dynamo
+
+  await dynamoDbClient.update({
+    Key: {pollId},
+    UpdateExpression: 'SET totalVotes = totalVotes + :inc',
+    ExpressionAttributeValues: {
+      ':inc': 1
+    }
+  }).promise();
+
+# update a potentially non-existing field with Dynamo
+
+  await dynamoDbClient.update({
+    Key: {pollId},
+    UpdateExpression: 'SET totalVotes = if_not_exists(totalVotes, :zero) + :inc',
+    ExpressionAttributeValues: {
+      ':inc': 1,
+      ':zero': 0
+    }
+  }).promise();
+
+# update a field with dynamic name (parameter mapping)
+
+  UpdateExpression: 'SET counts.#answer = if_not_exists(counts.#answer, :zero) + :inc',
+  ExpressionAttributeNames: {
+    '#answer': votedOption
+  },
+
+# prevent dynamo update from creating a record if it does not exist
+
+	ConditionExpression: 'attribute_exists(pollId)'
+
+# Allow notifications from Dynamo
+
+  PollingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      StreamSpecification:
+        StreamViewType: "NEW_IMAGE"
+
+# more information on dynamo streams
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-dynamodb-table-streamspecification.html
+
+# Trigger Lambda when a DynamoDB event fires
+
+  ExportResultsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        VoteUpdated:
+          Type: DynamoDB
+          Properties:
+            BatchSize: 100
+            Enabled: True
+            Stream: !GetAtt PollingTable.StreamArn
+            StartingPosition: "LATEST"
+
+# DynamoDB cloudFormation properties
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
+
+# More information about DynamoDB events
+
+https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-dynamodb.html
+
+# SQS CloudFormation properties
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues.html
+
+# SQS Queue Resource
+
+  ExportResultsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      FifoQueue: true
+      MessageRetentionPeriod: 3600
+
+# SQS Security Policies documentation
+
+https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
+
+# Required policies to publish SQS messages
+
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - "sqs:SendMessage"
+            Resource: !GetAtt ExportResultsQueue.Arn
+
+# Tell Lambda to access the Queue
+
+      Environment:
+        Variables:
+          RESULTSQUEUE: !Ref ExportResultsQueue
