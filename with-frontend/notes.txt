@@ -98,6 +98,21 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dyna
 
 https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-dynamodb.html
 
+# use SAM to generate test events
+
+sam local generate-event -h
+
+sam local generate-event dynamodb update
+
+# Turn Dynamo events into an array of plain objects
+
+event.Records.map(r => aws.DynamoDB.Converter.unmarshall(r.dynamodb.NewImage))
+
+# check logs for function by name
+
+sam logs -n ExportResultsFunction --stack-name poller-backend
+
+
 # SQS CloudFormation properties
 
 https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues.html
@@ -128,3 +143,16 @@ https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-b
       Environment:
         Variables:
           RESULTSQUEUE: !Ref ExportResultsQueue
+
+# Send messages to SQS
+
+const sqs = new aws.SQS();
+this.publish = async function (pollId, results) {
+		await sqs.sendMessage({
+			QueueUrl: queue,
+			MessageBody: JSON.stringify(results),
+			MessageGroupId: pollId,
+			MessageDeduplicationId: pollId + requestId
+		}).promise();
+	};
+
