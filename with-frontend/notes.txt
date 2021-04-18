@@ -1,3 +1,21 @@
+# Create stack parameter - new top-level section
+
+Parameters:
+  VerboseLog:
+    Type: String
+    Default: ''
+    Description: 'Set to something to provide detailed logging'
+
+# Pass stack parameter as an environment variable to a function
+
+  PollManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          DEBUG: !Ref VerboseLog
+
+
 # allow cross-origin access in API - note you may want to restrict AllowOrigin in real apps
 
 Globals:
@@ -12,8 +30,6 @@ Globals:
 sam deploy -g --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND --stack-name poller-frontend
 
 - make sure to provide the API URL when asked
-
-
 
 
 # update a field with Dynamo

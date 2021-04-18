@@ -181,23 +181,6 @@ await dynamoDbClient.put({Item: itemToSave}).promise();
 const response = await dynamoDbClient.get({Key: key, ConsistentRead: readFromPrimaryPartition}).promise();
 return response?.Item;
 
-## increment a counter in an item
-
-incrementCount = async (pollId, votedOption) => {
-  await dynamoDbClient.update({
-    Key: {pollId},
-    UpdateExpression: 'SET #counts.#answer = if_not_exists(#counts.#answer, :zero) + :inc',
-    ExpressionAttributeNames: {
-      '#counts': 'counts',
-      '#answer': votedOption,
-    },
-    ExpressionAttributeValues: {
-      ':inc': 1,
-      ':zero': 0
-    }
-  }).promise();
-};
-
 ## query cloudwatch insights
 
 fields action, pollId, @timestamp
