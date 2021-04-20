@@ -112,6 +112,9 @@ event.Records.map(r => aws.DynamoDB.Converter.unmarshall(r.dynamodb.NewImage))
 
 sam logs -n ExportResultsFunction --stack-name poller-backend
 
+# tail logs (continuously watch them)
+
+sam logs -n ExportResultsFunction --stack-name poller-backend --tail
 
 # SQS CloudFormation properties
 
@@ -156,3 +159,31 @@ this.publish = async function (pollId, results) {
 		}).promise();
 	};
 
+
+# enable XRay tracing in template
+
+Globals:
+  Api:
+    TracingEnabled: true
+  Function:
+    Tracing: "Active"
+
+# enable XRay tracing in function
+
+const AWSXRay = require('aws-xray-sdk-core'),
+	aws = AWSXRay.captureAWS(require('aws-sdk'));
+  // instead of aws = require('aws-sdk')
+
+AWSXRay.setContextMissingStrategy(() => {});
+
+exports.handler = async (event) => {
+
+# install xray library (in each function)
+
+npm install aws-xray-sdk-core
+
+# deploy with dependencies
+
+sam build
+
+sam deploy
