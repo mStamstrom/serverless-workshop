@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  VerboseLog:
+    Type: String
+    Default: ''
+    Description: 'Set to something to provide detailed logging'
+Globals:
+  Api:
+    Cors:
+      AllowHeaders: "'Content-Type'"
+      AllowOrigin: "'*'"
+      MaxAge: "'3600'"
+
+Resources:
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
+  PollingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "pollId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "pollId"
+          KeyType: "HASH"
+      BillingMode: "PAY_PER_REQUEST"
+      SSESpecification:
+        SSEEnabled: true
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-dynamodb-table-streamspecification.html
+      StreamSpecification:
+        StreamViewType: "NEW_IMAGE"
+
+  PollManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: poll-management
+      Handler: lambda.handler
+      Runtime: nodejs14.x
+      MemorySize: 512
+      Timeout: 30
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              # https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazondynamodb.html
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+            Resource: !GetAtt PollingTable.Arn
+      Environment:
+        Variables:
+          POLLINGTABLE: !Ref PollingTable
+          DEBUG: !Ref VerboseLog
+      Events:
+        CreatePollEvent:
+          Type: Api
+          Properties:
+            Path: /polls
+            Method: put
+        ReadPollEvent:
+          Type: Api
+          Properties:
+            Path: /polls/{pollId}
+            Method: get
+        VoteEvent:
+          Type: Api
+          Properties:
+            Path: /polls/{pollId}
+            Method: post
+
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues.html
+  ExportResultsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      FifoQueue: true
+      MessageRetentionPeriod: 3600
+
+  ExportResultsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: export-results
+      Handler: lambda.handler
+      Runtime: nodejs14.x
+      MemorySize: 512
+      Timeout: 30
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              # https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
+              - "sqs:SendMessage"
+            Resource: !GetAtt ExportResultsQueue.Arn
+      Environment:
+        Variables:
+          RESULTSQUEUE: !Ref ExportResultsQueue
+          DEBUG: !Ref VerboseLog
+      Events:
+        VoteUpdated:
+          # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-dynamodb.html
+          Type: DynamoDB
+          Properties:
+            BatchSize: 100
+            Enabled: True
+            # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
+            Stream: !GetAtt PollingTable.StreamArn
+            StartingPosition: "LATEST"
+
+  WebsocketsComponent:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: websockets.yaml
+      Parameters:
+        GroupName: "pollId"
+        VerboseLog: !Ref VerboseLog
+        MessageSQSQueue: !GetAtt ExportResultsQueue.Arn
+
+Outputs:
+  APIURL:
+    Description: "API Endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  RESULTSQUEUE:
+    Description: "Queue for intermediate results"
+    Value: !Ref ExportResultsQueue
+  POLLINGTABLE:
+    Description: "DynamoDB table for polling"
+    Value: !Ref PollingTable
+  WebSocketURI:
+    Description: "Websockets Endpoint URL"
+    Value: !GetAtt WebsocketsComponent.Outputs.WebSocketURI

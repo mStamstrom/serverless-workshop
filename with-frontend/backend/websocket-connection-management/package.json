@@ -1,0 +1,9 @@
+{
+  "name": "websocket-connection-management",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lambda.js",
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED"
+}

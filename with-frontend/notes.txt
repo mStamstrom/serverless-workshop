@@ -171,8 +171,8 @@ Globals:
 # enable XRay tracing in function
 
 const AWSXRay = require('aws-xray-sdk-core'),
-	aws = AWSXRay.captureAWS(require('aws-sdk'));
   // instead of aws = require('aws-sdk')
+	aws = AWSXRay.captureAWS(require('aws-sdk'));
 
 AWSXRay.setContextMissingStrategy(() => {});
 
@@ -187,3 +187,53 @@ npm install aws-xray-sdk-core
 sam build
 
 sam deploy
+
+
+# add a sub-stack
+
+  WebsocketsComponent:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: websockets.yaml
+      Parameters:
+        GroupName: "pollId"
+        VerboseLog: !Ref VerboseLog
+        MessageSQSQueue: !GetAtt ExportResultsQueue.Arn
+
+# extract an output from the substack
+
+!GetAtt WebsocketsComponent.Outputs.WebSocketURI
+
+# allow a function to query an index
+
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - "dynamodb:Query"
+              Resource: !Sub "${TableArn}/index/${IndexName}"
+
+# Add capability to existing samconfig.toml
+
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+
+# get wscat
+
+npm i wscat -g
+
+# connect to websocket URL using wscat
+
+wscat -c URL
+
+# Trigger a lambda function from SQS
+
+SendToGroupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !Ref MessageSQSQueue
+            BatchSize: 10
+            Enabled: true

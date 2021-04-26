@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  GroupName:
+    Type: String
+    Default: ''
+    Description: 'Connection database partition key name'
+  StageName:
+    Type: String
+    Default: 'Prod'
+    Description: 'Api Stage Name'
+  VerboseLog:
+    Type: String
+    Default: ''
+    Description: 'Set to something to provide detailed logging'
+  MessageSQSQueue:
+    Type: String
+    Description: 'Incoming SQS Queue'
+
+Resources:
+  ConnectionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "connectionId"
+          AttributeType: "S"
+        - AttributeName: !Ref GroupName
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "connectionId"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        - IndexName: !Sub "IndexBy${GroupName}"
+          KeySchema:
+            - AttributeName: !Ref GroupName
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: KEYS_ONLY
+      BillingMode: "PAY_PER_REQUEST"
+
+  ConnectionManagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: websocket-connection-management
+      Handler: lambda.handler
+      MemorySize: 256
+      Runtime: nodejs14.x
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - "dynamodb:PutItem"
+                - "dynamodb:DeleteItem"
+                - "dynamodb:UpdateItem"
+              Resource: !GetAtt ConnectionsTable.Arn
+      Environment:
+        Variables:
+          CONNECTION_TABLE: !Ref ConnectionsTable
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+          DEBUG: !Ref VerboseLog
+
+  ConnectionManagementIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketAPI
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ConnectionManagementFunction.Arn}/invocations"
+
+  ConnectionManagementPerMission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketAPI
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ConnectionManagementFunction
+      Principal: apigateway.amazonaws.com
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketAPI
+      RouteKey: $connect
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${ConnectionManagementIntegration}"
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketAPI
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${ConnectionManagementIntegration}"
+
+  WebSocketAPI:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${AWS::StackName}-WebSocketAPI"
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    DependsOn:
+      - ConnectRoute
+      - DisconnectRoute
+    Properties:
+      StageName: !Ref StageName
+      ApiId: !Ref WebSocketAPI
+      AutoDeploy: true
+
+  SendToGroupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: websocket-send-to-group
+      Handler: lambda.handler
+      Timeout: 20
+      MemorySize: 256
+      Runtime: nodejs14.x
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - "dynamodb:Query"
+            Resource: !Sub "${ConnectionsTable.Arn}/index/IndexBy${GroupName}"
+          - Effect: Allow
+            Action:
+              - 'execute-api:ManageConnections'
+            Resource:
+              - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketAPI}/*'
+      Environment:
+        Variables:
+          CONNECTION_TABLE: !Ref ConnectionsTable
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+          DEBUG: !Ref VerboseLog
+          GROUP_NAME: !Ref GroupName
+          GROUP_INDEX_NAME: !Sub "IndexBy${GroupName}"
+          MESSAGE_ENDPOINT: !Sub "https://${WebSocketAPI}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !Ref MessageSQSQueue
+            BatchSize: 10
+            Enabled: true
+Outputs:
+  WebSocketURI:
+    Description: "The WSS Protocol URI to connect to"
+    Value: !Sub 'wss://${WebSocketAPI}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'

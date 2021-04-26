@@ -4,6 +4,10 @@ Parameters:
   API:
     Type: String
     Description: 'API URL'
+  WEBSOCKETURL:
+    Type: String
+    Description: 'Websocket API URL'
+    Default: ''
 Resources:
 
   # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket.html
@@ -46,6 +50,7 @@ Resources:
         FilePattern: "*.html"
         Values:
           APIURL: !Ref API
+          WEBSOCKETURL: !Ref WEBSOCKETURL
 
 Outputs:
   WEBSITEURL:

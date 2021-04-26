@@ -22,7 +22,8 @@ module.exports = function RequestProcessor ({pollRepository, logger}) {
 			}
 		}
 		if (request.requestType === 'vote' && request.pollId && request.body.answer) {
-			// EX7: USE REPOSITORY TO SAVE THE VOTE
+			await pollRepository.incrementCount(request.pollId, request.body.answer);
+			logger?.log({action: 'vote', pollId: request.pollId});
 			return {pollId: request.pollId};
 		}
 		throw 'invalid-request';
