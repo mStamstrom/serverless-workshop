@@ -26,6 +26,8 @@ Resources:
       BillingMode: "PAY_PER_REQUEST"
       SSESpecification:
         SSEEnabled: true
+      StreamSpecification:
+        StreamViewType: "NEW_IMAGE"
 
   PollManagementFunction:
     Type: AWS::Serverless::Function
@@ -48,6 +50,7 @@ Resources:
         Variables:
           POLLINGTABLE: !Ref PollingTable
           DEBUG: !Ref VerboseLog
+          RESULTSQUEUE: !Ref ExportResultsQueue
       Events:
         CreatePollEvent:
           Type: Api
@@ -65,6 +68,43 @@ Resources:
             Path: /polls/{pollId}
             Method: post
 
+  ExportResultsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: export-results
+      Handler: lambda.handler
+      Runtime: nodejs14.x
+      MemorySize: 512
+      Timeout: 30
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              # https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-examples-of-iam-policies.html
+              - "sqs:SendMessage"
+            Resource: !GetAtt ExportResultsQueue.Arn
+      Environment:
+        Variables:
+          RESULTSQUEUE: !Ref ExportResultsQueue
+          DEBUG: !Ref VerboseLog
+      Events:
+        VoteUpdated:
+          # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-property-function-dynamodb.html
+          Type: DynamoDB
+          Properties:
+            BatchSize: 100
+            Enabled: True
+            # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
+            Stream: !GetAtt PollingTable.StreamArn
+            StartingPosition: "LATEST"
+
+
+  ExportResultsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      FifoQueue: true
+      MessageRetentionPeriod: 3600
+
 Outputs:
   APIURL:
     Description: "API Endpoint URL"
@@ -72,3 +112,6 @@ Outputs:
   POLLINGTABLE:
     Description: "DynamoDB table for polling"
     Value: !Ref PollingTable
+  RESULTSQUEUE:
+    Description: "Queue for intermediate results"
+    Value: !Ref ExportResultsQueue

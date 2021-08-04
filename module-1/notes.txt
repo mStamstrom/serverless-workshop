@@ -3,6 +3,7 @@
 ## guided deployment (initial)
 
 sam deploy -g --stack-name poller-backend
+sam deploy --stack-name poller-backend
 
 ## SAM resource definition for functions
 
@@ -12,7 +13,7 @@ https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/s
 
 export AWS_REGION=eu-north-1
 export AWS_DEFAULT_REGION=eu-north-1
-export AWS_PROFILE=workshop
+
 
 ## Remove a stack from your account 
 

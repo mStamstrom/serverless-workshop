@@ -6,6 +6,7 @@ describe('exercise 4', () => {
 		jest.setTimeout(30000);
 		readFromPrimaryPartition = true;
 		pollId = 'poll-' + Date.now();
+		
 		// https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html
 		dynamoDbClient = new aws.DynamoDB.DocumentClient({
 			params: {TableName: dbName}
